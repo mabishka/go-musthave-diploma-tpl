@@ -33,8 +33,19 @@ func (s *Server) HandlerGetOrders(w http.ResponseWriter, r *http.Request) {
 
 	list, err := s.GetOrderList(r.Context(), user)
 	if err != nil {
+		if errors.Is(err, model.ErrorNotFound) {
+			logger.Log().Info("HandlerGetOrders error GetOrderList", zap.Error(err))
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		logger.Log().Error("HandlerGetOrders error GetOrderList", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(list) == 0 {
+		logger.Log().Info("HandlerGetOrders error GetOrderList is empty")
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 

@@ -31,10 +31,14 @@ func (s *Server) HandlerGetWithdrawals(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	logger.Log().Info("get withdrawls for user", zap.Int("user", user))
 	list, err := s.GetWithdrawals(r.Context(), user)
 	if err != nil {
+		if errors.Is(err, model.ErrorNotFound) {
+			logger.Log().Error("HandlerGetWithdrawals error len", zap.Error(err))
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		logger.Log().Error("HandlerGetWithdrawals error GetWithdrawals", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
