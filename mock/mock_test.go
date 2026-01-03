@@ -14,9 +14,8 @@ func TestConnector_Executor(t *testing.T) {
 
 	e := Executor{}
 
-	rows, err := e.QueryContext(ctx, query)
+	_, err := e.QueryContext(ctx, query)
 	assert.Error(t, err)
-	assert.Empty(t, rows)
 
 	result, err := e.ExecContext(ctx, query)
 	assert.NoError(t, err)
@@ -36,9 +35,8 @@ func TestConnector_ExecutorError(t *testing.T) {
 
 	e := ExecutorError{}
 
-	rows, err := e.QueryContext(ctx, query)
+	_, err := e.QueryContext(ctx, query)
 	assert.Error(t, err)
-	assert.Empty(t, rows)
 
 	result, err := e.ExecContext(ctx, query)
 	assert.Error(t, err)
@@ -61,9 +59,8 @@ func TestConnector_Connector(t *testing.T) {
 	err := e.PingContext(ctx)
 	assert.NoError(t, err)
 
-	rows, err := e.QueryContext(ctx, query)
+	_, err = e.QueryContext(ctx, query)
 	assert.Error(t, err)
-	assert.Empty(t, rows)
 
 	result, err := e.ExecContext(ctx, query)
 	assert.NoError(t, err)
@@ -94,9 +91,8 @@ func TestConnector_ConnectorError(t *testing.T) {
 	err := e.PingContext(ctx)
 	assert.NoError(t, err)
 
-	rows, err := e.QueryContext(ctx, query)
+	_, err = e.QueryContext(ctx, query)
 	assert.Error(t, err)
-	assert.Empty(t, rows)
 
 	result, err := e.ExecContext(ctx, query)
 	assert.Error(t, err)

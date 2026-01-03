@@ -35,7 +35,7 @@ const (
 func New() *Config {
 	return &Config{
 		RunAddress:           "localhost:8000",
-		DatabaseURL:          "user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable",
+		DatabaseURL:          "",
 		AccuralSystemAddress: "localhost:8080",
 		LogLevel:             "info",
 	}
