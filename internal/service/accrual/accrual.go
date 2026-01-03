@@ -172,7 +172,7 @@ func (p *AcuralData) processValue(ctx context.Context, user int, order int) {
 			logger.Log().Info("step accrual process value", zap.Int("order", order))
 			status, err := p.request(ctx, user, order)
 			if err != nil {
-				return
+				logger.Log().Error("request error", zap.Error(err))
 			}
 			if status == model.OrderStateFinish {
 				return
