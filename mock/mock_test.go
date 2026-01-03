@@ -14,9 +14,6 @@ func TestConnector_Executor(t *testing.T) {
 
 	e := Executor{}
 
-	_, err := e.QueryContext(ctx, query)
-	assert.Error(t, err)
-
 	result, err := e.ExecContext(ctx, query)
 	assert.NoError(t, err)
 	assert.Empty(t, result)
@@ -34,9 +31,6 @@ func TestConnector_ExecutorError(t *testing.T) {
 	query := "select 1"
 
 	e := ExecutorError{}
-
-	_, err := e.QueryContext(ctx, query)
-	assert.Error(t, err)
 
 	result, err := e.ExecContext(ctx, query)
 	assert.Error(t, err)
@@ -58,9 +52,6 @@ func TestConnector_Connector(t *testing.T) {
 
 	err := e.PingContext(ctx)
 	assert.NoError(t, err)
-
-	_, err = e.QueryContext(ctx, query)
-	assert.Error(t, err)
 
 	result, err := e.ExecContext(ctx, query)
 	assert.NoError(t, err)
@@ -90,9 +81,6 @@ func TestConnector_ConnectorError(t *testing.T) {
 
 	err := e.PingContext(ctx)
 	assert.NoError(t, err)
-
-	_, err = e.QueryContext(ctx, query)
-	assert.Error(t, err)
 
 	result, err := e.ExecContext(ctx, query)
 	assert.Error(t, err)
