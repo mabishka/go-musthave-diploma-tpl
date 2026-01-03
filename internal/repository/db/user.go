@@ -62,6 +62,11 @@ func GetAuth(ctx context.Context, e model.Executor, login string) (int, string, 
 		return 0, "", err
 	}
 
+	if err = rows.Err(); err != nil {
+		logger.Log().Error("error", zap.Error(err))
+		return 0, "", err
+	}
+
 	return id, auth, nil
 }
 
@@ -84,6 +89,11 @@ func GetUser(ctx context.Context, e model.Executor, auth string) (int, string, e
 	var login string
 	var id int
 	if err := rows.Scan(&id, &login); err != nil {
+		return 0, "", err
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return 0, "", err
 	}
 

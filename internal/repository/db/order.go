@@ -59,6 +59,10 @@ func ProcessOrder(ctx context.Context, e model.Executor, order, user int) error 
 				logger.Log().Error("order UniqueViolation scan error", zap.Error(err))
 				return model.ErrorNotFound
 			}
+			if err = rows.Err(); err != nil {
+				logger.Log().Error("error", zap.Error(err))
+				return err
+			}
 			if !isOwned {
 				logger.Log().Error("order UniqueViolation ErrorNotOwned")
 				return model.ErrorNotOwned
@@ -75,7 +79,7 @@ func ProcessOrder(ctx context.Context, e model.Executor, order, user int) error 
 
 func GetBalance(ctx context.Context, e model.Executor, user int) (float32, float32, error) {
 
-	row, err := e.QueryContext(ctx,
+	rows, err := e.QueryContext(ctx,
 		`select coalesce(sum(n_value),0), -coalesce(sum(case when n_value < 0 then n_value end),0) from t_order_value v
 		where n_user = $1 `, user)
 
@@ -83,13 +87,17 @@ func GetBalance(ctx context.Context, e model.Executor, user int) (float32, float
 		logger.Log().Error("error", zap.Error(err))
 		return 0, 0, err
 	}
-	defer row.Close()
+	defer rows.Close()
 
-	if !row.Next() {
+	if !rows.Next() {
 		return 0, 0, model.ErrorNotFound
 	}
 	var current, withdrawn float32
-	if err := row.Scan(&current, &withdrawn); err != nil {
+	if err := rows.Scan(&current, &withdrawn); err != nil {
+		return 0, 0, err
+	}
+	if err = rows.Err(); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return 0, 0, err
 	}
 	return current, withdrawn, nil
@@ -148,6 +156,11 @@ func GetWithdrawals(ctx context.Context, e model.Executor, user int) ([]model.Wi
 		}
 		response = append(response, model.WithdrawnResponse{Order: strconv.Itoa(order), Sum: -sum, Processed: processed})
 	}
+
+	if err = rows.Err(); err != nil {
+		logger.Log().Error("error", zap.Error(err))
+		return nil, err
+	}
 	return response, nil
 }
 
@@ -178,6 +191,11 @@ func GetOrderList(ctx context.Context, e model.Executor, user int) ([]model.Orde
 		}
 		response = append(response, model.OrderResponse{Number: order, Status: model.GetOrderStatus(status), Accrual: accrual, Uploaded: uploaded})
 	}
+
+	if err = rows.Err(); err != nil {
+		logger.Log().Error("error", zap.Error(err))
+		return nil, err
+	}
 	return response, nil
 }
 
@@ -201,6 +219,10 @@ func GetActiveOrderList(ctx context.Context, e model.Executor) ([]model.AccrualP
 			return nil, err
 		}
 		response = append(response, model.AccrualProcess{Order: order, User: user})
+	}
+	if err = rows.Err(); err != nil {
+		logger.Log().Error("error", zap.Error(err))
+		return nil, err
 	}
 	return response, nil
 }
