@@ -32,10 +32,11 @@ type AcuralData struct {
 }
 
 func New(ctx context.Context, conn model.Connector, addr string) (*AcuralData, error) {
-	baseURL := &url.URL{
-		Scheme: "http",
-		Host:   addr,
+	baseURL, err := url.Parse(addr)
+	if err != nil {
+		return nil, err
 	}
+
 	if err := conn.PingContext(ctx); err != nil {
 		return nil, err
 	}

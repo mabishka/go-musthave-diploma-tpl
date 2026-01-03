@@ -36,7 +36,7 @@ func New() *Config {
 	return &Config{
 		RunAddress:           "localhost:8000",
 		DatabaseURL:          "",
-		AccuralSystemAddress: "localhost:8080",
+		AccuralSystemAddress: "http://localhost:8080",
 		LogLevel:             "info",
 	}
 }
