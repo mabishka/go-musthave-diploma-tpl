@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"math"
 
 	"github.com/mabishka/go-musthave-diploma-tpl/internal/logger"
 	"github.com/mabishka/go-musthave-diploma-tpl/internal/model"
@@ -89,6 +90,8 @@ func (p *OrderData) GetBalance(ctx context.Context, user int) (float32, float32,
 	return db.GetBalance(ctx, p.conn, user)
 }
 
+const delta = 0.01
+
 func (p *OrderData) Withdraw(ctx context.Context, user int, order int, sum float32) error {
 	if !luhn.Valid(order) {
 		return model.ErrorInvalidLuhn
@@ -109,7 +112,8 @@ func (p *OrderData) Withdraw(ctx context.Context, user int, order int, sum float
 		return err
 	}
 
-	if current < sum {
+	logger.Log().Info("check Withdraw", zap.Float32("current", current), zap.Float32("sum", sum))
+	if math.Abs(float64(current-sum)) > delta && current < sum {
 		tx.Rollback()
 		return model.ErrorInvalidBalance
 	}
