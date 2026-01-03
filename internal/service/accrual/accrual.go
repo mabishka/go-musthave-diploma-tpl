@@ -97,7 +97,7 @@ func (p *AcuralData) request(ctx context.Context, user int, order int) (model.Or
 
 	if err != nil {
 		logger.Log().Error("error read request from accrual", zap.Error(err))
-		return model.OrderStateFinish, err
+		return model.OrderStateActive, err
 	}
 	defer resp.Body.Close()
 
