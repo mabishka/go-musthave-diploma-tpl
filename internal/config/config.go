@@ -18,7 +18,7 @@ type Config struct {
 const (
 	envRunAddress           = "RUN_ADDRESS"
 	envDatabaseURL          = "DATABASE_URI"
-	envAccuralSystemAddress = "ACCURAL_SYSTEM_ADDRESS"
+	envAccuralSystemAddress = "ACCRUAL_SYSTEM_ADDRESS"
 	envLogLevel             = "LOG_LEVEL"
 
 	flagRunAddress           = "a"
