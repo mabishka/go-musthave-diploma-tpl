@@ -32,6 +32,11 @@ func (s *Server) HandlerGetOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	list, err := s.GetOrderList(r.Context(), user)
+	if err != nil {
+		logger.Log().Error("HandlerGetOrders error GetOrderList", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	logger.Log().Info("HandlerGetOrders get", zap.Int("user", user), zap.Int("len", len(list)))
 
