@@ -29,7 +29,7 @@ func main() {
 	defer fnCancel(errors.New("exist"))
 
 	if err := new(ctx); err != nil {
-		log.Printf("exist with error: %v", err)
+		log.Fatalf("exist with error: %v", err)
 	}
 }
 
