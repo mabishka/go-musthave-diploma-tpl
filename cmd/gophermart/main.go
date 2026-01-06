@@ -92,7 +92,7 @@ func run(ctx context.Context, srv *http.Server) {
 
 	go func() {
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
+		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 		select {
 		case s := <-sigint:
