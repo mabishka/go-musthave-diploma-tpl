@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -93,7 +92,7 @@ func run(ctx context.Context, srv *http.Server) {
 	go func() {
 		defer wg.Done()
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
+		signal.Notify(sigint)
 
 		select {
 		case s := <-sigint:
