@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -24,18 +23,17 @@ import (
 const stopTimeout = 5 * time.Second
 
 func main() {
-	ctx, fnCancel := context.WithCancelCause(context.Background())
-	defer fnCancel(errors.New("exist"))
 
-	if err := new(ctx); err != nil {
+	if err := new(context.WithCancelCause(context.Background())); err != nil {
 		log.Fatalf("exist with error: %v", err)
 	}
 }
 
-func new(ctx context.Context) error {
+func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 
 	config := config.New()
 	if err := logger.InitLogger(config.LogLevel); err != nil {
+		fnCancel(err)
 		return err
 	}
 
@@ -58,6 +56,7 @@ func new(ctx context.Context) error {
 	conn, err := db.New(ctx, config.DatabaseURL)
 	if err != nil {
 		logger.Log().Error("incorrect config", zap.Error(err))
+		fnCancel(err)
 		return err
 	}
 	defer conn.Close()
@@ -65,6 +64,7 @@ func new(ctx context.Context) error {
 	server, err := handler.New(ctx, conn, config.AccuralSystemAddress)
 	if err != nil {
 		logger.Log().Error("incorrect server", zap.Error(err))
+		fnCancel(err)
 		return err
 	}
 	defer server.Close()
@@ -82,17 +82,25 @@ func new(ctx context.Context) error {
 	router.Get("/api/user/balance", server.HandlerGetBalance)
 	router.Get("/api/user/withdrawals", server.HandlerGetWithdrawals)
 
-	run(ctx, &http.Server{
-		Addr:    config.RunAddress,
-		Handler: router,
-	})
+	if err = run(ctx, &http.Server{
+		Addr:         config.RunAddress,
+		Handler:      router,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}); err != nil {
+		fnCancel(err)
+		return err
+	}
+	fnCancel(nil)
+
 	return nil
 }
-func run(ctx context.Context, srv *http.Server) {
+func run(ctx context.Context, srv *http.Server) error {
 
 	go func() {
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+		signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 		select {
 		case s := <-sigint:
@@ -110,7 +118,9 @@ func run(ctx context.Context, srv *http.Server) {
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		logger.Log().Info("HTTP server ListenAndServe", zap.Error(err))
+		return err
 	}
 
 	logger.Log().Info("exit")
+	return nil
 }

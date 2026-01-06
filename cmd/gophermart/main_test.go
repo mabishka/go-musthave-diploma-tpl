@@ -12,8 +12,8 @@ import (
 
 func Test_new(t *testing.T) {
 
-	ctx, fnCancel := context.WithTimeout(context.Background(), time.Second*2)
-	defer fnCancel()
+	ctx, fnTimeoutCancel := context.WithTimeoutCause(context.Background(), time.Second*2, errors.New("stop timeout test"))
+	defer fnTimeoutCancel()
 	tests := []struct {
 		name    string // description of this test case
 		wantErr bool
@@ -25,7 +25,7 @@ func Test_new(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := new(ctx)
+			err := new(context.WithCancelCause(ctx))
 			if test.wantErr {
 				assert.Error(t, err)
 				return
