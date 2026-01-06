@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -91,10 +90,7 @@ func new(ctx context.Context) error {
 }
 func run(ctx context.Context, srv *http.Server) {
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
@@ -115,7 +111,6 @@ func run(ctx context.Context, srv *http.Server) {
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		logger.Log().Info("HTTP server ListenAndServe", zap.Error(err))
 	}
-	wg.Wait()
 
 	logger.Log().Info("exit")
 }
