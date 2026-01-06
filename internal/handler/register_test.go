@@ -19,7 +19,8 @@ import (
 func TestServer_HandlerPostRegister(t *testing.T) {
 
 	if err := logger.InitLogger("info"); err != nil {
-		panic(err)
+		assert.NoError(t, err)
+		return
 	}
 
 	ctx := context.Background()

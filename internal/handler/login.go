@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -50,7 +49,7 @@ func (s *Server) HandlerPostLogin(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	_, login, err := s.GetUser(context.TODO(), token)
+	_, login, err := s.GetUser(r.Context(), token)
 	if err != nil {
 		if errors.Is(err, model.ErrorNotFound) {
 			logger.Log().Error("HandlerPostLogin error GetUser", zap.Error(err), zap.String("login", register.Login))

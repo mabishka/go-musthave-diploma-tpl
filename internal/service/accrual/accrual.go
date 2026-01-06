@@ -14,6 +14,7 @@ import (
 	"github.com/mabishka/go-musthave-diploma-tpl/internal/model"
 	"github.com/mabishka/go-musthave-diploma-tpl/internal/repository/db"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const MaxProcessedOrderCount = 1000
@@ -29,6 +30,7 @@ type AcuralData struct {
 	baseURL         *url.URL
 	conn            model.Connector
 	activeOrderList chan model.AccrualProcess
+	wg              *errgroup.Group
 }
 
 func New(ctx context.Context, conn model.Connector, addr string) (*AcuralData, error) {
@@ -50,6 +52,11 @@ func New(ctx context.Context, conn model.Connector, addr string) (*AcuralData, e
 
 func (p *AcuralData) Close() {
 	close(p.activeOrderList)
+	if p.wg != nil {
+		p.wg.Wait()
+	}
+
+	logger.Log().Info("finished accrual process")
 }
 
 func (p *AcuralData) ProcessOrder(data model.AccrualProcess) {
@@ -185,13 +192,22 @@ func (p *AcuralData) processValue(ctx context.Context, user int, order int) {
 func (p *AcuralData) StartProcess(ctx context.Context) {
 
 	logger.Log().Info("start accrual process", zap.Error(ctx.Err()))
+	p.wg, ctx = errgroup.WithContext(ctx)
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Log().Info("stop accrual process", zap.Error(ctx.Err()))
+			logger.Log().Info("stopping accrual process", zap.Error(ctx.Err()))
 			return
-		case data := <-p.activeOrderList:
-			go p.processValue(ctx, data.User, data.Order)
+		case data, ok := <-p.activeOrderList:
+			if !ok {
+				logger.Log().Info("stopping accrual process with close channel")
+				return
+			}
+			p.wg.Go(func() error {
+				p.processValue(ctx, data.User, data.Order)
+				return nil
+			})
+
 		}
 	}
 

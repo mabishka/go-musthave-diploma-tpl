@@ -3,7 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -17,15 +21,18 @@ import (
 
 func main() {
 	ctx, fnCancel := context.WithCancelCause(context.Background())
-	defer fnCancel(errors.New("exit"))
-	run(ctx)
+	defer fnCancel(errors.New("exist"))
+
+	if err := new(ctx); err != nil {
+		log.Printf("exist with error: %v", err)
+	}
 }
 
-func run(ctx context.Context) {
+func new(ctx context.Context) error {
 
 	config := config.New()
 	if err := logger.InitLogger(config.LogLevel); err != nil {
-		panic(err)
+		return err
 	}
 
 	logger.Log().Info("config",
@@ -46,13 +53,15 @@ func run(ctx context.Context) {
 
 	conn, err := db.New(ctx, config.DatabaseURL)
 	if err != nil {
-		panic(err)
+		logger.Log().Error("incorrect config", zap.Error(err))
+		return err
 	}
 	defer conn.Close()
 
 	server, err := handler.New(ctx, conn, config.AccuralSystemAddress)
 	if err != nil {
-		panic(err)
+		logger.Log().Error("incorrect server", zap.Error(err))
+		return err
 	}
 	defer server.Close()
 
@@ -69,14 +78,38 @@ func run(ctx context.Context) {
 	router.Get("/api/user/balance", server.HandlerGetBalance)
 	router.Get("/api/user/withdrawals", server.HandlerGetWithdrawals)
 
+	run(ctx, &http.Server{
+		Addr:    config.RunAddress,
+		Handler: router,
+	})
+	return nil
+}
+
+func run(ctx context.Context, srv *http.Server) {
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		if err := http.ListenAndServe(config.RunAddress, router); err != nil {
-			panic(err)
+		defer wg.Done()
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt)
+
+		select {
+		case s := <-sigint:
+			logger.Log().Info("stop with signal", zap.String("signal", s.String()))
+		case <-ctx.Done():
+			logger.Log().Info("stop with context", zap.Error(context.Cause(ctx)))
+		}
+
+		if err := srv.Shutdown(context.Background()); err != nil {
+			logger.Log().Info("HTTP server shutdown", zap.Error(err))
 		}
 	}()
 
-	logger.Log().Info("listen port", zap.String("RunAddress", config.RunAddress))
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		logger.Log().Info("HTTP server ListenAndServe", zap.Error(err))
+	}
+	wg.Wait()
 
-	<-ctx.Done()
 	logger.Log().Info("exit")
 }

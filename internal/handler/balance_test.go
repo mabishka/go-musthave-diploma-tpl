@@ -16,7 +16,8 @@ import (
 
 func TestServer_HandlerGetBalance(t *testing.T) {
 	if err := logger.InitLogger("info"); err != nil {
-		panic(err)
+		assert.NoError(t, err)
+		return
 	}
 
 	ctx := context.Background()

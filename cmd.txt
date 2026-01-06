@@ -18,3 +18,11 @@ gophermarttest-windows-amd64.exe -gophermart-binary-path=.\cmd\gophermart\gopher
 
 
 gophermarttest-windows-amd64.exe -gophermart-binary-path=.\cmd\gophermart\gophermart.exe -accrual-binary-path=.\cmd\accrual\accrual_windows_amd64.exe -gophermart-database-uri="user=user password=user host=localhost port=5433 dbname=practicum" -gophermart-host=localhost -accrual-database-uri="user=user password=user host=localhost port=5433 dbname=practicum" -gophermart-port=8000 -accrual-host=localhost -accrual-port=8080 1>fflog.json 2>&1
+
+context.TODO() поправила
+Ни в обучающем курсе, ни в ТЗ проекта ничего нет про graceful shutdown, хотя было бы интересно посмотреть/почитать как его реализуют. Возможно будет далее, но пока не встретилось.
+
+YT gjyzkf  возвращается только первая ошибка, которая возникла в одной из горутин.
+И я не поняла чем пло panic в main? 
+
+
