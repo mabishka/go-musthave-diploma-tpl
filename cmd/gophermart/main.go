@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -18,6 +21,8 @@ import (
 	"github.com/mabishka/go-musthave-diploma-tpl/internal/middleware"
 	"github.com/mabishka/go-musthave-diploma-tpl/internal/repository/db"
 )
+
+const stopTimeout = 5 * time.Second
 
 func main() {
 	ctx, fnCancel := context.WithCancelCause(context.Background())
@@ -84,7 +89,6 @@ func new(ctx context.Context) error {
 	})
 	return nil
 }
-
 func run(ctx context.Context, srv *http.Server) {
 
 	var wg sync.WaitGroup
@@ -92,7 +96,7 @@ func run(ctx context.Context, srv *http.Server) {
 	go func() {
 		defer wg.Done()
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint)
+		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
 		select {
 		case s := <-sigint:
@@ -101,7 +105,9 @@ func run(ctx context.Context, srv *http.Server) {
 			logger.Log().Info("stop with context", zap.Error(context.Cause(ctx)))
 		}
 
-		if err := srv.Shutdown(context.Background()); err != nil {
+		stopCtx, cancel := context.WithTimeoutCause(context.Background(), stopTimeout, fmt.Errorf("server Shutdown with timeout %v", stopTimeout))
+		defer cancel()
+		if err := srv.Shutdown(stopCtx); err != nil {
 			logger.Log().Info("HTTP server shutdown", zap.Error(err))
 		}
 	}()
